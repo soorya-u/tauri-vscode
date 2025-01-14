@@ -413,6 +413,19 @@ function __getNpmCommand() {
 }
 
 function __getPackageManagerCommand(projectPath: string): string | null {
+
+  try {
+    const packageJson = JSON.parse(
+      fs.readFileSync(`${projectPath}/package.json`, 'utf8')
+    )
+
+    // if there is no tauri command, use cargo
+    if (!packageJson.script || !packageJson.script['tauri']) return 'cargo'
+  } catch {
+    // if project uses vanilla js i.e. if no package.json exists
+    return 'cargo'
+  }
+
   const m = __usePnpm(projectPath)
     ? 'pnpm'
     : __useYarn(projectPath)
