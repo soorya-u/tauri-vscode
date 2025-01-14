@@ -414,30 +414,29 @@ function __getNpmCommand() {
 
 function __getPackageManagerCommand(projectPath: string): string | null {
   const isNodeProject = __isNodeProject(projectPath)
-  if (!isNodeProject) return 'cargo'
+  if (isNodeProject) {
+    if (__usePnpm(projectPath)) return 'pnpm'
+    if (__useYarn(projectPath)) return 'yarn'
 
-  const packageJson = JSON.parse(
-    fs.readFileSync(`${projectPath}/package.json`, 'utf8')
-  )
-  if (!packageJson.script || !packageJson.script['tauri']) return 'cargo'
-
-  const m = __usePnpm(projectPath)
-    ? 'pnpm'
-    : __useYarn(projectPath)
-      ? 'yarn'
-      : __useNpm(projectPath)
-        ? __getNpmCommand()
-        : __useCargo()
-          ? 'cargo'
-          : null
-
-  if (!m) {
-    vscode.window.showErrorMessage(
-      "Couldn't detect package manager for current project. Try running Tauri: Init Command"
+    const packageJson = JSON.parse(
+      fs.readFileSync(`${projectPath}/package.json`, 'utf8')
     )
+
+    if (
+      __useNpm(projectPath) &&
+      packageJson.script &&
+      packageJson.script['tauri']
+    )
+      return __getNpmCommand()
   }
 
-  return m
+  if (__useCargo()) return 'cargo'
+
+  vscode.window.showErrorMessage(
+    "Couldn't detect package manager for current project. Try running Tauri: Init Command"
+  )
+
+  return null
 }
 
 interface RunOptions {
